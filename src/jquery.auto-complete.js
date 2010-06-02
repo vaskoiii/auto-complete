@@ -156,6 +156,7 @@ var
 
 	// Make a local copy of the key codes used throughout the plugin
 	KEY = {
+		esc: 27,
 		backspace: 8,
 		tab: 9,
 		enter: 13,
@@ -294,7 +295,12 @@ var
 			// Input
 			onChange: undefined,
 			autoFill: FALSE,
-			nonInput: [ KEY.shift, KEY.left, KEY.right ],
+			autoFill: FALSE,
+			// iii -1
+			// nonInput: [ KEY.shift, KEY.left, KEY.right ],
+			// iii +2
+			// Unless we can include [ctrl, shift, alt, meta] why include just [shift]
+			nonInput: [ KEY.left, KEY.right ],
 			multiple: FALSE,
 			multipleSeparator: ' ',
 			// Events
@@ -421,7 +427,15 @@ jQuery.autoComplete = function( self, options ) {
 
 		// Tab Key
 		if ( key === KEY.tab && ulOpen ) {
+			// iii +3
+			if ($li && $li.hasClass( settings.rollover)) {
+					autoFill( liData.value );
+			}
 			select( event );
+		}
+		// iii +3
+		else if ( key === KEY.esc ) { 
+			$ul.hide( event ); 
 		}
 		// Enter Key
 		else if ( key === KEY.enter ) {
@@ -433,6 +447,8 @@ jQuery.autoComplete = function( self, options ) {
 			enter = TRUE;
 			if ( $li && $li.hasClass( settings.rollover ) ) {
 				enter = settings.preventEnterSubmit && ulOpen ? FALSE : TRUE;
+				// iii +1
+				autoFill( liData.value );
 				select( event );
 			}
 			else if ( ulOpen ) { 
@@ -526,7 +542,19 @@ jQuery.autoComplete = function( self, options ) {
 
 				// Only send request if character length passes
 				if ( cache.val.length >= settings.minChars ) {
-					sendRequest( event, settings, cache, ( key === KEY.backspace || key === KEY.space ) );
+					// iii +9
+					// Prevent request call if field is highlighted
+					// IE8
+					if (document.selection) {
+						if (document.selection.createRange().text.length != cache.val.length) {
+							sendRequest( event, settings, cache, ( key === KEY.backspace || key === KEY.space ) );
+						}
+					}
+					// Firefox 3.6.3 OSX, Opera 10 OSX, Chrome OSX
+					else if (self.selectionStart > 0) {
+						sendRequest( event, settings, cache, ( key === KEY.backspace || key === KEY.space ) );
+					// iii +1
+					}
 				}
 				// Remove list on backspace of small string
 				else if ( key == KEY.backspace ) {
